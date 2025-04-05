@@ -1,0 +1,44 @@
+{
+  "schemas": {
+    "dcnr": {
+      "tables": {
+        "alarme": {
+          "description": "Registro de alarmes do sistema",
+          "columns": [
+            {
+              "name": "codigo",
+              "type": "bigint",
+              "nullable": false,
+              "primary_key": true
+            },
+            {
+              "name": "cod_termo",
+              "type": "bigint",
+              "nullable": false,
+              "foreign_key": {
+                "target_table": "diagnostico_var_termo",
+                "target_column": "codigo",
+                "constraint_name": "fk_alarme_cod_termo"
+              }
+            }
+          ],
+          "indexes": [
+            {
+              "name": "alarme_pkey",
+              "type": "primary_key",
+              "columns": ["codigo"]
+            }
+          ],
+          "referenced_by": [
+            {
+              "table": "alarme_ocorrencia",
+              "constraint": "fk_alarme_ocorrencia_cod_alarme",
+              "columns": ["cod_alarme"]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+
