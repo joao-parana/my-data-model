@@ -15,6 +15,9 @@
 ```console
 pip install my-data-model
 ```
+
+## Usage
+
 This project depends on this environment variables:
 
 ```bash
@@ -24,6 +27,10 @@ export MY_DB_USER=my_user
 export MY_DB_PSW=my_secret_password
 export MY_DB_DB_NAME=my_db_name
 export MY_DB_SCHEMA_NAME=my_db_schema
+```
+
+```bash
+python3 src/my_data_model/main.py
 ```
 
 ## License
