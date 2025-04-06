@@ -1,5 +1,5 @@
 dist/
-tmp/
+tmp/[A-z]*
 *.log
 .vscode/
 

@@ -1,10 +1,17 @@
 import os
+import sys
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker
+
+# ------------------- Custom Exceptions -------------------
+
+
+class SchemaValueError(ValueError):
+    pass
 
 
 # ------------------- Modelos Pydantic -------------------
@@ -154,7 +161,7 @@ class PostgresSchemaExtractor:
         ]
 
         for schema_name in schemas:
-            print(f"schema = {schema_name}")
+            print(f"schema = {schema_name}", flush=True)
             schema_model = Schema()
             tables = self.inspector.get_table_names(schema=schema_name)
 
@@ -181,12 +188,15 @@ class PostgresSchemaExtractor:
 
                     table_model.columns[col["name"]] = column
 
-                print(f"table_name = {table_name}")
-                print(f"columns = {table_model.columns}")
-                print(f"primary_keys = {primary_keys}, foreign_keys = {foreign_keys}")
+                print(f"table_name = {table_name}", flush=True)
+                # print(f"columns = {table_model.columns}", flush=True)
+                # print(f"primary_keys = {primary_keys}, foreign_keys = {foreign_keys}", flush=True)
 
                 # Índices
-                print("Obtendo os indices para a tabela {table_name}")
+                print(
+                    f"Obtendo os indices para a tabela '{schema_name}.{table_name}'",
+                    flush=True,
+                )
                 try:
                     indexes = self.inspector.get_indexes(table_name, schema=schema_name)
                     for idx in indexes:
@@ -203,24 +213,36 @@ class PostgresSchemaExtractor:
                             table_model.indexes[idx["name"]] = index
 
                 except Exception as e:
-                    msg = f"Erro ao tentar obter os indices no catálogo. Exceptio: {e}"
-                    raise Exception(msg)
+                    msg = (
+                        "Erro ao tentar obter os indices no catálogo para '{schema_name}.{table_name}'. "
+                        f"Exception: {e}"
+                    )
+                    raise SchemaValueError(msg)
 
                 # Referenced By
-                table_model.referenced_by = self._get_referenced_by(
-                    schema_name, table_name
-                )
+                try:
+                    table_model.referenced_by = self._get_referenced_by(
+                        schema_name, table_name
+                    )
+                except Exception as e:
+                    msg = (
+                        "Erro ao tentar obter restrições de integridade referencial "
+                        f"no catálogo para '{schema_name}.{table_name}'. Exception: {e}"
+                    )
+                    raise SchemaValueError(msg)
 
                 schema_model.tables[table_name] = table_model
 
             database_model.schemas[schema_name] = schema_model
-            print(
-                f"\n\n\ntype(schema_model) = {type(schema_model)}\nschema_model = \n{schema_model}\n"
-            )
+            # print(
+            #     f"\n\n\ntype(schema_model) = {type(schema_model)}\n"
+            #     f"schema_model = \n{schema_model}\n"
+            # )
 
         return database_model
 
     def close(self):
+        print("Fechando conexão ao banco de dados", flush=True)
         self.session.close()
         self.engine.dispose()
 
@@ -232,6 +254,8 @@ MY_DB_USER = os.environ.get("MY_DB_USER", "NONE")
 MY_DB_PSW = os.environ.get("MY_DB_PSW", "NONE")
 MY_DB_DB_NAME = os.environ.get("MY_DB_DB_NAME", "NONE")
 MY_DB_SCHEMA_NAME = os.environ.get("MY_DB_SCHEMA_NAME", "NONE")
+
+JSON_DESTINATION_FILENAME = "tmp/schema_documentation.json"
 
 
 def main():
@@ -247,23 +271,31 @@ def main():
 
     # Extrair schema
     extractor = PostgresSchemaExtractor(**config)
-    print(f"type(extractor) = {type(extractor)}, extractor = {extractor}")
+    print(f"type(extractor) = {type(extractor)}, extractor = {extractor}", flush=True)
     try:
         database_model = extractor.extract_schema()
 
         # Converter para JSON
-        json_output = database_model.model_dump_json(indent=2)
+        json_output = database_model.model_dump_json(
+            indent=2,  # Indentação
+            exclude_none=True,  # Opcional: remove campos com valor None
+            by_alias=False,  # Mantém os nomes originais dos campos
+        )
 
         # Salvar em arquivo
-        with open("schema_documentation.json", "w") as f:
+        with open(JSON_DESTINATION_FILENAME, "w") as f:
             f.write(json_output)
 
-        print("Documentação gerada com sucesso em schema_documentation.json")
-
     except Exception as e:
-        print(f"Erro durante a extração: {e}")
+        print(f"Erro durante a extração: {e}", flush=True)
+        sys.exit(1)
     finally:
         extractor.close()
+
+    print(
+        f"\n\nDocumentação gerada com sucesso em {JSON_DESTINATION_FILENAME}\n",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":
