@@ -21,20 +21,15 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "behave",
-  # O PEP 621, que define o formato do arquivo pyproject.toml, não suporta a expansão
-  # de variáveis ou a construção de caminhos de arquivo relativos ao diretório do projeto
-  # Por esse motivo somos obrigados a copiar de packages/* para /tmp/packages
-  # "pandaspi@file:///tmp/packages/pandaspi-v1.0.0.zip",
-  # "opendsb@file:///tmp/packages/opendsb-2.1.3.tar.gz",
+  # "behave",
   "pyright",
   "black",
   "ruff",
-  "psutil",
-  "tomli",
-  "pandas",
-  "uvicorn",
-  "fastapi",
+  # "psutil",
+  # "tomli",
+  # "pandas",
+  # "uvicorn",
+  # "fastapi",
 ]
 
 [project.urls]

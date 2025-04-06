@@ -7,9 +7,8 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker
 
+
 # ------------------- Custom Exceptions -------------------
-
-
 class SchemaValueError(ValueError):
     pass
 
